@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cap-App</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      background: #090414;
+      color: #f5f3ff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      padding: 14px 10px 92px;
+      background: radial-gradient(circle at 50% 0%, #2d0d66 0%, #090414 70%);
+    }
+    @keyframes logoFloat {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-7px) scale(1.03); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 22px rgba(168, 85, 247, 0.65); border-color: #d946ef; }
+      50% { box-shadow: 0 0 38px rgba(244, 114, 182, 0.95); border-color: #f5d0fe; }
+    }
+    @keyframes tileWave {
+      0%, 100% { transform: translateY(0px); filter: brightness(1); }
+      50% { transform: translateY(-5px); filter: brightness(1.25); }
+    }
+    #splash {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: radial-gradient(circle at center, #2b0e63 0%, #070311 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      cursor: pointer;
+    }
+    .logo-box {
+      display: flex;
+      gap: 6px;
+      padding: 14px 18px;
+      border-radius: 20px;
+      background: #160a30;
+      border: 1px solid #d946ef;
+      animation: logoFloat 2.2s ease-in-out infinite, glowPulse 2.2s ease-in-out infinite;
+    }
+    .tile {
+      width: 40px;
+      height: 50px;
+      border-radius: 10px;
+      background: #14082e;
+      border: 1px solid #c084fc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 900;
+      color: #fae8ff;
+      animation: tileWave 1.6s ease-in-out infinite;
+    }
+    .tile:nth-child(2) { animation-delay: 0.12s; }
+    .tile:nth-child(3) { animation-delay: 0.24s; }
+    .tile:nth-child(4) { animation-delay: 0.36s; }
+    .tile:nth-child(5) { animation-delay: 0.48s; }
+    .tile:nth-child(6) { animation-delay: 0.60s; }
+    .tile.neon {
+      background: linear-gradient(135deg, #7e22ce, #db2777);
+      border-color: #f5d0fe;
+      color: #fff;
+    }
+    .splash-sub {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      color: #e879f9;
+    }
+    .wrap { max-width: 560px; margin: 0 auto; }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 12px;
+      border-radius: 16px;
+      background: #140a2e;
+      border: 1px solid rgba(168, 85, 247, 0.45);
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .mini-logo {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #7e22ce, #db2777);
+      border: 1px solid #f5d0fe;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 900;
+      color: #fff;
+    }
+    .title { font-size: 17px; font-weight: 900; color: #fff; }
+    .sub { font-size: 10px; color: #c4b5fd; }
+    .h-right { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .bal-pill {
+      padding: 5px 8px;
+      border-radius: 999px;
+      background: #1e0f42;
+      border: 1px solid rgba(232, 121, 249, 0.5);
+      font-size: 11px;
+      font-weight: 800;
+      color: #fae8ff;
+    }
+    .prem-pill {
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid #f5d0fe;
+      background: linear-gradient(135deg, #7e22ce, #db2777);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .prem-pill.on { background: linear-gradient(135deg, #a855f7, #f59e0b); }
+    .page {
+      display: none;
+      padding: 15px 14px;
+      border-radius: 18px;
+      background: #140a2e;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+    .page.active { display: block; }
+    .p-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .p-desc { font-size: 12px; color: #b794f4; margin-bottom: 14px; }
+    .lbl { display: block; font-size: 12px; font-weight: 700; color: #e9d5ff; margin-bottom: 6px; }
+    .inp, .sel {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(168, 85, 247, 0.5);
+      background: #0b051a;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      outline: none;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 13px;
+      border: 1px solid #f0abfc;
+      background: linear-gradient(135deg, #7e22ce, #c026d3);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .btn-prem {
+      width: 100%;
+      padding: 13px;
+      border-radius: 13px;
+      border: 1px solid #fde047;
+      background: linear-gradient(135deg, #9333ea, #d97706);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .btn-sec {
+      width: 100%;
+      padding: 12px;
+      border-radius: 13px;
+      border: 1px solid rgba(168, 85, 247, 0.45);
+      background: #1e0f42;
+      color: #f3e8ff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .btn-claim {
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid #67e8f9;
+      background: rgba(8, 145, 178, 0.35);
+      color: #cffafe;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .btn-buy {
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid #f0abfc;
+      background: linear-gradient(135deg, #7e22ce, #db2777);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .info {
+      padding: 11px 13px;
+      border-radius: 12px;
+      background: #0b051a;
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      font-size: 12px;
+      color: #ddd6fe;
+      margin-bottom: 12px;
+    }
+    .card {
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #1c0e3d;
+      border: 1px solid rgba(168, 85, 247, 0.4);
+      margin-bottom: 10px;
+    }
+    .prem-card {
+      padding: 14px;
+      border-radius: 16px;
+      background: linear-gradient(145deg, rgba(126, 34, 206, 0.35), rgba(217, 119, 6, 0.25));
+      border: 1px solid rgba(250, 204, 21, 0.65);
+      margin-bottom: 12px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .handle { font-size: 15px; font-weight: 800; color: #fff; }
+    .badge { padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+    .b-rare { background: linear-gradient(135deg, #c026d3, #f59e0b); color: #fff; }
+    .b-free { background: rgba(34, 211, 238, 0.18); color: #67e8f9; border: 1px solid rgba(34, 211, 238, 0.45); }
+    .b-busy { background: rgba(244, 63, 94, 0.18); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.45); }
+    .small { font-size: 11px; color: #c4b5fd; margin-top: 6px; }
+    .ref-box {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #0a0517;
+      border: 1px dashed #e879f9;
+      font-family: monospace;
+      font-size: 12px;
+      color: #f5d0fe;
+      word-break: break-all;
+      margin: 8px 0 10px;
+    }
+    .nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 9000;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 3px;
+      padding: 8px 4px 10px;
+      background: #0d061f;
+      border-top: 1px solid rgba(192, 132, 252, 0.55);
+    }
+    .tab {
+      padding: 9px 2px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: #a78bfa;
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+      text-align: center;
+    }
+    .tab.active {
+      background: linear-gradient(135deg, #7e22ce, #c026d3);
+      color: #fff;
+      border-color: #f0abfc;
+    }
+  </style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="logo-box">
+    <div class="tile">C</div>
+    <div class="tile">A</div>
+    <div class="tile">P</div>
+    <div class="tile neon">A</div>
+    <div class="tile neon">P</div>
+    <div class="tile neon">P</div>
+  </div>
+  <div class="splash-sub">NEON PURPLE • STRICT CHECK</div>
+</div>
+
+<div class="wrap">
+  <div class="header">
+    <div class="brand">
+      <div class="mini-logo">CAP</div>
+      <div>
+        <div class="title">Cap-App</div>
+        <div class="sub">Bot API • t.me • Fragment</div>
+      </div>
+    </div>
+    <div class="h-right">
+      <div id="balTonTop" class="bal-pill">0 TON</div>
+      <div id="balStarsTop" class="bal-pill">0 ★</div>
+      <button id="btnHeaderPrem" class="prem-pill" type="button">★ ПРЕМ</button>
+    </div>
+  </div>
+
+  <div id="page-search" class="page active">
+    <div class="p-title">Поиск и строгая проверка</div>
+    <div class="p-desc" id="searchLimitDesc">5 бесплатных поисков в день. Ищет до нахождения свободных.</div>
+    <label class="lbl" for="selStyle">Вид юзов</label>
+    <select id="selStyle" class="sel">
+      <option value="rare">Редкие юзы (корни + 6–8 симв.)</option>
+      <option value="len5">5 буквенные юзы (★ Премиум)</option>
+      <option value="premium_hunt">Поиск за премиум (★ Редкие + 5–7 симв.)</option>
+      <option value="short6">Короткие (ровно 6 букв)</option>
+      <option value="clean">Обычные слова (6–8 букв)</option>
+      <option value="with_num">С цифрами на конце</option>
+      <option value="with_under">С нижним подчёркиванием (_)</option>
+    </select>
+    <button id="btnGen" class="btn" type="button">Найти чистые юзы</button>
+    <button id="btnOpenPrem" class="btn-prem" type="button">★ Открыть блок Премиума</button>
+    <label class="lbl" for="inpCheck">Проверка юзернейма</label>
+    <input id="inpCheck" class="inp" type="text" placeholder="@username или username" />
+    <button id="btnCheck" class="btn-sec" type="button">Проверить везде</button>
+    <div id="stSearch" class="info">Готово к проверке.</div>
+    <div id="outSearch"></div>
+  </div>
+
+  <div id="page-val" class="page">
+    <div class="p-title">Оценка юзернейма</div>
+    <div class="p-desc">Оценка по длине, редкости и статусу в TON и ★.</div>
+    <input id="inpVal" class="inp" type="text" placeholder="Юзернейм для оценки" />
+    <button id="btnVal" class="btn" type="button">Рассчитать оценник</button>
+    <div id="stVal" class="info">Введите юзернейм и нажмите кнопку.</div>
+    <div id="outVal"></div>
+  </div>
+
+  <div id="page-prem" class="page">
+    <div class="p-title">Блок Премиума</div>
+    <div class="p-desc">50 ★ в месяц или 2 реферала = 1 день Премиума.</div>
+    <div class="prem-card">
+      <div class="row">
+        <span class="handle">★ Статус Премиума</span>
+        <span id="premBadge" class="badge b-free">Не активен</span>
+      </div>
+      <div id="premTimer" class="small">Статус: не активен</div>
+      <div id="premRefs" class="small">Рефералов: 0 / 2 для 1 дня</div>
+      <button id="btnBuyPremStars" class="btn-prem" type="button" style="margin-top:10px;">★ Купить Премиум на 30 дней (50 ★)</button>
+      <button id="btnRedeem" class="btn-sec" type="button">Забрать 1 день за 2 рефералов</button>
+    </div>
+    <div class="card">
+      <div class="handle">Приглашение рефералов</div>
+      <div class="small">Поделись ссылкой — за каждых 2 реферала получишь 1 день Премиума:</div>
+      <div id="refLink" class="ref-box">...</div>
+      <button id="btnCopyRef" class="btn-sec" type="button">Скопировать реф-ссылку</button>
+      <button id="btnAddRef" class="btn-sec" type="button">+ Засчитать реферала</button>
+    </div>
+  </div>
+
+  <div id="page-market" class="page">
+    <div class="p-title">Маркет лотов</div>
+    <div class="p-desc">Выставляй юзы в TON — при покупке TON идут продавцу.</div>
+    <input id="inpLotUser" class="inp" type="text" placeholder="Юзернейм лота" />
+    <input id="inpLotTon" class="inp" type="number" min="0.1" step="0.1" placeholder="Цена в TON" />
+    <button id="btnAddLot" class="btn" type="button">Выставить лот</button>
+    <button id="btnLoadLots" class="btn-sec" type="button">Обновить список</button>
+    <div id="stMarket" class="info">Загрузка лотов...</div>
+    <div id="outMarket"></div>
+  </div>
+
+  <div id="page-wallet" class="page">
+    <div class="p-title">Кошелёк</div>
+    <div class="p-desc">Привяжи адрес кошелька (TON / Keeper).</div>
+    <div id="walletBalBox" class="info">Баланс: 0 TON • 0 ★</div>
+    <input id="inpWallet" class="inp" type="text" placeholder="Адрес кошелька" />
+    <button id="btnSaveWallet" class="btn" type="button">Привязать кошелёк</button>
+    <div id="stWallet" class="info">Кошелёк не привязан.</div>
+  </div>
+
+  <div id="page-profile" class="page">
+    <div class="p-title">Профиль</div>
+    <div class="p-desc">Никнейм, занятые юзы, баланс и статистика.</div>
+    <label class="lbl" for="inpNick">Никнейм</label>
+    <input id="inpNick" class="inp" type="text" placeholder="Твой никнейм" />
+    <button id="btnSaveNick" class="btn-sec" type="button">Сохранить никнейм</button>
+    <div class="card">
+      <div class="row">
+        <span id="profName" class="handle">Игрок</span>
+        <span id="profBadge" class="badge b-free">Обычный</span>
+      </div>
+      <div id="profId" class="small">ID: —</div>
+      <div id="profPrem" class="small">Премиум: не активен</div>
+      <div id="profBal" class="small">Баланс: 0 TON • 0 ★</div>
+      <div id="profWallet" class="small">Кошелёк: не привязан</div>
+      <div id="profStats" class="small">Поисков: 0 • Проверок: 0 • Оценок: 0</div>
+    </div>
+    <div class="card">
+      <div class="handle">Мои занятые юзы</div>
+      <div id="claimedList" class="small">Пока нет занятых юзов.</div>
+    </div>
+  </div>
+</div>
+
+<div id="bottomNav" class="nav">
+  <button class="tab active" data-tab="page-search" type="button">Поиск</button>
+  <button class="tab" data-tab="page-val" type="button">Оценка</button>
+  <button class="tab" data-tab="page-prem" type="button">★ Прем</button>
+  <button class="tab" data-tab="page-market" type="button">Маркет</button>
+  <button class="tab" data-tab="page-wallet" type="button">Кош</button>
+  <button class="tab" data-tab="page-profile" type="button">Профиль</button>
+</div>
+
+<script>
+(function () {
+  function hideSplash() {
+    var sp = document.getElementById('splash');
+    if (sp) sp.style.display = 'none';
+  }
+  var spEl = document.getElementById('splash');
+  if (spEl) spEl.addEventListener('click', hideSplash);
+  setTimeout(hideSplash, 4000);
+
+  function clean(s) {
+    return String(s || '').trim().replace(/^@+/, '').toLowerCase().replace(/[^a-z0-9_]/g, '');
+  }
+
+  var tg = (window.Telegram && window.Telegram.WebApp) ? window.Telegram.WebApp : null;
+
+  var state = {
+    userId: 'player_' + Math.floor(100000 + Math.random() * 900000),
+    name: 'Игрок',
+    ton: 0,
+    stars: 0,
+    permanentPremium: false,
+    premiumUntil: 0,
+    referrals: 0,
+    searches: 0,
+    checks: 0,
+    valuations: 0,
+    searchesToday: 0,
+    wallet: '',
+    claimed: []
+  };
+
+  try {
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      var u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+      if (u && u.id) {
+        state.userId = String(u.id);
+        state.name = [u.first_name, u.last_name].filter(Boolean).join(' ') || u.username || 'Игрок';
+      }
+    }
+    var sId = localStorage.getItem('cap_uid');
+    var sNick = localStorage.getItem('cap_nick');
+    var sPrem = Number(localStorage.getItem('cap_prem') || 0);
+    var sRefs = Number(localStorage.getItem('cap_refs') || 0);
+    if (!tg || !(tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id)) {
+      if (sId) state.userId = sId;
+      else localStorage.setItem('cap_uid', state.userId);
+    }
+    if (sNick) state.name = sNick;
+    if (sPrem > 0) state.premiumUntil = sPrem;
+    if (sRefs > 0) state.referrals = sRefs;
+  } catch (e) {}
+
+  function isPrem() {
+    return Boolean(state.permanentPremium) || Number(state.premiumUntil || 0) > Date.now();
+  }
+
+  function premText() {
+    if (state.permanentPremium) return 'активен навсегда';
+    var diff = Number(state.premiumUntil || 0) - Date.now();
+    if (diff <= 0) return 'не активен';
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor((diff % 86400000) / 3600000);
+    return 'активен ещё ' + d + 'д ' + h + 'ч';
+  }
+
+  function refUrl() {
+    return window.location.origin + window.location.pathname + '?ref=' + encodeURIComponent(state.userId);
+  }
+
+  function saveLocal() {
+    try {
+      localStorage.setItem('cap_prem', String(state.premiumUntil || 0));
+      localStorage.setItem('cap_refs', String(state.referrals || 0));
+      localStorage.setItem('cap_nick', String(state.name || 'Игрок'));
+    } catch (e) {}
+  }
+
+  function applyServerProfile(p) {
+    if (!p) return;
+    state.ton = Number(p.ton ?? state.ton);
+    state.stars = Number(p.stars ?? state.stars);
+    state.permanentPremium = Boolean(p.permanentPremium);
+    state.searches = Number(p.searches ?? state.searches);
+    state.checks = Number(p.checks ?? state.checks);
+    state.valuations = Number(p.valuations ?? state.valuations);
+    state.searchesToday = Number(p.searchesToday ?? state.searchesToday);
+    if (typeof p.referrals === 'number') state.referrals = p.referrals;
+    if (typeof p.premiumUntil === 'number') state.premiumUntil = p.premiumUntil;
+    if (typeof p.wallet === 'string') state.wallet = p.wallet;
+    if (Array.isArray(p.claimed)) state.claimed = p.claimed;
+    saveLocal();
+    render();
+  }
+
+  function render() {
+    var on = isPrem();
+    document.getElementById('balTonTop').textContent = Number(state.ton || 0).toFixed(1) + ' TON';
+    document.getElementById('balStarsTop').textContent = Math.floor(state.stars || 0) + ' ★';
+    document.getElementById('walletBalBox').textContent =
+      'Баланс: ' + Number(state.ton || 0).toFixed(2) + ' TON • ' + Math.floor(state.stars || 0) + ' ★';
+
+    var left = on ? '∞' : Math.max(0, 5 - state.searchesToday) + ' / 5';
+    document.getElementById('searchLimitDesc').textContent =
+      'Бесплатных поисков сегодня осталось: ' + left + '. Ищет до нахождения свободных.';
+
+    var hp = document.getElementById('btnHeaderPrem');
+    hp.textContent = on ? '★ ПРЕМ' : '★ ПРЕМ';
+    hp.className = on ? 'prem-pill on' : 'prem-pill';
+
+    var pb = document.getElementById('premBadge');
+    pb.textContent = on ? '★ АКТИВЕН' : 'НЕ АКТИВЕН';
+    pb.className = on ? 'badge b-rare' : 'badge b-free';
+    document.getElementById('premTimer').textContent = 'Статус: ' + premText();
+    document.getElementById('premRefs').textContent = 'Рефералов: ' + state.referrals + ' / 2 для 1 дня';
+    document.getElementById('refLink').textContent = refUrl();
+
+    document.getElementById('profName').textContent = state.name;
+    var prb = document.getElementById('profBadge');
+    prb.textContent = on ? '★ ПРЕМИУМ' : 'Обычный';
+    prb.className = on ? 'badge b-rare' : 'badge b-free';
+    document.getElementById('profId').textContent = 'ID: ' + state.userId;
+    document.getElementById('profPrem').textContent = 'Премиум: ' + premText();
+    document.getElementById('profBal').textContent =
+      'Баланс: ' + Number(state.ton || 0).toFixed(2) + ' TON • ' + Math.floor(state.stars || 0) + ' ★';
+    document.getElementById('profWallet').textContent = 'Кошелёк: ' + (state.wallet || 'не привязан');
+        document.getElementById('profStats').textContent =
+      'Поисков: ' + state.searches + ' • Проверок: ' + state.checks + ' • Оценок: ' + state.valuations;
+      document.getElementById('stWallet').textContent =
+      state.wallet ? ('Привязан кошелёк: ' + state.wallet) : 'Кошелёк не привязан.';
+
+    var cBox = document.getElementById('claimedList');
+    if (!state.claimed || !state.claimed.length) {
+      cBox.textContent = 'Пока нет занятых юзов.';
+    } else {
+      cBox.innerHTML = state.claimed.map(function (c) {
+        return '<div class="small">@' + c.username + '</div>';
+      }).join('');
+    }
+  }
+
+  function openTab(pageId) {
+    var pages = document.querySelectorAll('.page');
+    for (var i = 0; i < pages.length; i++) pages[i].classList.remove('active');
+    var target = document.getElementById(pageId);
+    if (target) target.classList.add('active');
+    var tabs = document.querySelectorAll('.tab');
+    for (var j = 0; j < tabs.length; j++) {
+      if (tabs[j].getAttribute('data-tab') === pageId) tabs[j].classList.add('active');
+      else tabs[j].classList.remove('active');
+    }
+    if (pageId === 'page-market') loadLots();
+  }
+
+  document.getElementById('bottomNav').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('.tab');
+    if (!btn) return;
+    var pageId = btn.getAttribute('data-tab');
+    if (pageId) openTab(pageId);
+  });
+
+  document.getElementById('btnHeaderPrem').addEventListener('click', function () { openTab('page-prem'); });
+  document.getElementById('btnOpenPrem').addEventListener('click', function () { openTab('page-prem'); });
+
+  function cardHtml(item) {
+    var b = item.badge || { code: 'available', label: 'Свободен' };
+    var cls = b.code === 'rare_premium' ? 'b-rare' : ((b.code === 'taken' || b.code === 'fragment') ? 'b-busy' : 'b-free');
+    var c = item.checks || {};
+    var line = 'Длина: ' + (item.length || item.username.length) +
+      ' | Bot: ' + (c.botApi && c.botApi.checked ? (c.botApi.taken ? 'занят' : 'чисто') : '—') +
+      ' | t.me: ' + (c.tMe && c.tMe.checked ? (c.tMe.taken ? 'занят' : 'чисто') : '—') +
+      ' | Fragment: ' + (c.fragment && c.fragment.checked ? (c.fragment.taken ? 'занят' : 'чисто') : '—');
+    var claimBtn = item.available
+      ? '<button class="btn-claim" data-claim="' + item.username + '" type="button">Занять</button>'
+      : '';
+    return '<div class="card"><div class="row"><span class="handle">@' + item.username +
+      '</span><span class="badge ' + cls + '">' + b.label +
+      '</span></div><div class="small">' + line + '</div>' +
+      (claimBtn ? '<div class="row" style="margin-top:8px;">' + claimBtn + '</div>' : '') + '</div>';
+  }
+
+  document.getElementById('outSearch').addEventListener('click', async function (ev) {
+    var uname = ev.target.getAttribute('data-claim');
+    if (!uname) return;
+    var st = document.getElementById('stSearch');
+    try {
+      var res = await fetch('/api/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: state.userId, username: uname })
+      });
+      var data = await res.json();
+      if (data.profile) applyServerProfile(data.profile);
+      st.textContent = data.ok
+        ? ('Юз @' + data.username + ' занят и добавлен в твой профиль!')
+        : (data.error || 'Не удалось занять');
+    } catch (e) {}
+  });
+
+  document.getElementById('btnGen').addEventListener('click', async function () {
+    var style = document.getElementById('selStyle').value;
+    var st = document.getElementById('stSearch');
+    var out = document.getElementById('outSearch');
+    out.innerHTML = '';
+    if ((style === 'len5' || style === 'premium_hunt') && !isPrem()) {
+      st.textContent = 'Нужен Премиум! Открой «★ Прем» (50 ★/мес или 2 реферала).';
+      return;
+    }
+    st.textContent = 'Ищем свободные юзернеймы до результата...';
+    try {
+      var q = '/api/generate?count=5&style=' + encodeURIComponent(style) +
+        '&userId=' + encodeURIComponent(state.userId);
+      var res = await fetch(q);
+      var data = await res.json();
+      if (data.profile) applyServerProfile(data.profile);
+      if (!data.ok) {
+        st.textContent = data.message || 'Ошибка поиска.';
+        return;
+      }
+      var list = data.items || [];
+      if (!list.length) {
+        st.textContent = 'Сделано ' + (data.scanned || 0) + ' проверок — попробуй ещё раз.';
+        return;
+      }
+      st.textContent = 'Найдено свободных: ' + list.length + ' (проверено: ' + (data.scanned || list.length) + ')';
+      out.innerHTML = list.map(cardHtml).join('');
+    } catch (e) {
+      st.textContent = 'Ошибка сети: ' + e.message;
+    }
+  });
+
+  document.getElementById('btnCheck').addEventListener('click', async function () {
+    var u = clean(document.getElementById('inpCheck').value);
+    var st = document.getElementById('stSearch');
+    var out = document.getElementById('outSearch');
+    if (!u) {
+      st.textContent = 'Введите юзернейм для проверки.';
+      return;
+    }
+    state.checks += 1;
+    render();
+    out.innerHTML = '';
+    st.textContent = 'Проверяем @' + u + '...';
+    try {
+      var res = await fetch('/api/check?username=' + encodeURIComponent(u));
+      var data = await res.json();
+      if (!data.ok) {
+        st.textContent = data.message || 'Неверный юзернейм.';
+        return;
+      }
+      st.textContent = data.available ? ('@' + data.username + ' свободен.') : ('@' + data.username + ' занят.');
+      out.innerHTML = cardHtml(data);
+    } catch (e) {
+      st.textContent = 'Ошибка проверки: ' + e.message;
+    }
+  });
+
+  var ICONIC = ['durov', 'fragment', 'telegram', 'crypto', 'ton', 'vip', 'god', 'king', 'boss', 'rich', 'gold', 'star'];
+  var RARE_W = ['vortex', 'zenith', 'kobra', 'shadow', 'pulse', 'cyber', 'ghost', 'drift', 'venom', 'frost', 'storm', 'titan', 'blade', 'spark', 'apex', 'nova'];
+
+  document.getElementById('btnVal').addEventListener('click', function () {
+    var u = clean(document.getElementById('inpVal').value);
+    var st = document.getElementById('stVal');
+    var out = document.getElementById('outVal');
+    if (!u || u.length < 4) {
+      st.textContent = 'Введите юзернейм от 4 символов.';
+      return;
+    }
+    state.valuations += 1;
+    render();
+    var isIconic = ICONIC.indexOf(u) !== -1;
+    var root = RARE_W.find(function (r) { return u.indexOf(r) !== -1; });
+    var hasSym = /[\d_]/.test(u);
+    var ton = 15;
+    if (isIconic) ton = u.length <= 5 ? 25000 : 12500;
+    else if (u.length === 4 && !hasSym) ton = 15000;
+    else if (u.length === 5 && !hasSym) ton = root ? 8500 : 3200;
+    else if (u.length === 6 && !hasSym) ton = root ? 1400 : 380;
+    else if (u.length <= 8 && !hasSym) ton = root ? 320 : 85;
+    else ton = root ? 65 : 18;
+    var stars = Math.round(ton * 120);
+    var score = Math.min(99, Math.max(25, Math.round(Math.log10(ton + 1) * 24)));
+    st.textContent = 'Оценник @' + u + ' рассчитан.';
+    out.innerHTML = '<div class="card"><div class="row"><span class="handle">@' + u +
+      '</span><span class="badge b-rare">~' + ton.toLocaleString('ru-RU') + ' TON</span></div><div class="small">Баллы: ' +
+      score + '/100 • Ориентир: ~' + stars.toLocaleString('ru-RU') + ' ★</div></div>';
+  });
+
+  document.getElementById('btnBuyPremStars').addEventListener('click', async function () {
+    var infoEl = document.getElementById('premRefs');
+    if (!tg || !tg.openInvoice) {
+      infoEl.textContent = 'Оплата 50 ★ доступна при открытии мини-приложения в Telegram.';
+      return;
+    }
+    try {
+      var res = await fetch('/api/stars/invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: state.userId })
+      });
+      var data = await res.json();
+      if (!data.ok || !data.invoiceLink) {
+        infoEl.textContent = data.error || 'Не удалось создать счёт на 50 ★';
+        return;
+      }
+      tg.openInvoice(data.invoiceLink, function (status) {
+        if (status === 'paid') {
+          state.premiumUntil = Math.max(Date.now(), state.premiumUntil) + 30 * 86400000;
+          saveLocal();
+          render();
+          infoEl.textContent = 'Оплата прошла! Премиум активен на 30 дней.';
+        } else {
+          infoEl.textContent = 'Оплата отменена или не завершена.';
+        }
+      });
+    } catch (e) {
+      infoEl.textContent = 'Ошибка соединения при оплате звёздами.';
+    }
+  });
+
+  document.getElementById('btnAddRef').addEventListener('click', async function () {
+    state.referrals += 1;
+    saveLocal();
+    render();
+    try {
+      var res = await fetch('/api/referral/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: state.userId })
+      });
+      var data = await res.json();
+      if (data.profile) applyServerProfile(data.profile);
+    } catch (e) {}
+  });
+
+  document.getElementById('btnRedeem').addEventListener('click', async function () {
+    if (state.referrals < 2) {
+      document.getElementById('premRefs').textContent = 'Нужно минимум 2 реферала (сейчас ' + state.referrals + ').';
+      return;
+    }
+    try {
+      var res = await fetch('/api/referral/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: state.userId })
+      });
+      var data = await res.json();
+      if (data.profile) applyServerProfile(data.profile);
+    } catch (e) {}
+  });
+
+  document.getElementById('btnCopyRef').addEventListener('click', function () {
+    var url = refUrl();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).catch(function () {});
+    document.getElementById('premRefs').textContent = 'Ссылка скопирована! Рефералов: ' + state.referrals + ' / 2';
+  });
+
+  async function loadLots() {
+    var st = document.getElementById('stMarket');
+    var out = document.getElementById('outMarket');
+    try {
+      var res = await fetch('/api/market');
+      var data = await res.json();
+      var list = (data && data.listings) || [];
+      st.textContent = 'Активных лотов: ' + list.length;
+      if (!list.length) {
+        out.innerHTML = '<div class="card"><div class="small">Лотов пока нет. Выставь юзернейм выше.</div></div>';
+        return;
+      }
+      out.innerHTML = list.map(function (lot) {
+        var actionBtn = lot.sold
+          ? '<span class="badge b-busy">Куплен (' + (lot.buyerName || 'Игрок') + ')</span>'
+          : '<button class="btn-buy" data-buy="' + lot.id + '" type="button">Купить</button>';
+        return '<div class="card"><div class="row"><span class="handle">@' + lot.username +
+          '</span><span class="badge b-rare">' + lot.priceTon + ' TON</span></div><div class="small">Продавец: ' +
+          (lot.sellerName || 'Игрок') + '</div><div class="row" style="margin-top:8px;">' + actionBtn + '</div></div>';
+      }).join('');
+    } catch (e) {
+      st.textContent = 'Не удалось загрузить лоты.';
+    }
+  }
+
+  document.getElementById('outMarket').addEventListener('click', async function (ev) {
+    var buyId = ev.target.getAttribute('data-buy');
+    if (!buyId) return;
+    var st = document.getElementById('stMarket');
+    var res = await fetch('/api/market/buy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: buyId, buyerId: state.userId, buyerName: state.name })
+    });
+    var data = await res.json();
+    if (data.profile) applyServerProfile(data.profile);
+    if (data.ok) {
+      st.textContent = 'Лот @' + data.listing.username + ' куплен, TON зачислены продавцу!';
+      await loadLots();
+    } else {
+      st.textContent = data.error || 'Ошибка покупки';
+    }
+  });
+
+  document.getElementById('btnAddLot').addEventListener('click', async function () {
+    var u = clean(document.getElementById('inpLotUser').value);
+    var p = Number(document.getElementById('inpLotTon').value);
+    var st = document.getElementById('stMarket');
+    if (!u || !p || p <= 0) {
+      st.textContent = 'Введите юзернейм и цену в TON.';
+      return;
+    }
+    var res = await fetch('/api/market', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, priceTon: p, sellerId: state.userId, sellerName: state.name })
+    });
+    var data = await res.json();
+    if (data.ok) {
+      document.getElementById('inpLotUser').value = '';
+      document.getElementById('inpLotTon').value = '';
+      await loadLots();
+    } else {
+      st.textContent = data.error || 'Ошибка добавления лота.';
+    }
+  });
+
+  document.getElementById('btnLoadLots').addEventListener('click', loadLots);
+
+  document.getElementById('btnSaveWallet').addEventListener('click', async function () {
+    var addr = document.getElementById('inpWallet').value.trim();
+    var st = document.getElementById('stWallet');
+    if (!addr) {
+      st.textContent = 'Введите адрес кошелька.';
+      return;
+    }
+    var res = await fetch('/api/wallet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: state.userId, address: addr })
+    });
+    var data = await res.json();
+    if (data.profile) applyServerProfile(data.profile);
+    if (data.ok) {
+      st.textContent = 'Привязан кошелёк: ' + data.address;
+    } else {
+      st.textContent = data.error || 'Ошибка.';
+    }
+  });
+
+  document.getElementById('btnSaveNick').addEventListener('click', function () {
+    var nick = document.getElementById('inpNick').value.trim().slice(0, 32);
+    if (!nick) return;
+    state.name = nick;
+    saveLocal();
+    render();
+  });
+
+  fetch('/api/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: state.userId, name: state.name })
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.profile) applyServerProfile(d.profile);
+    else render();
+  }).catch(render);
+})();
+</script>
+</body>
+</html>
